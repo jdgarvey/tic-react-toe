@@ -3,11 +3,16 @@ import { Board } from "./Board";
 import { GameState, initialState, NextPlayerMap, Player, winningCombinations } from "./Game.model";
 
 export const Game = () => {
-  const [gameState, setGameState] = useState(initialState);
+  const [{currentMove, moves}, setGameState] = useState(initialState);
 
-  const goToMove = (i: number) => setGameState({...gameState, ...gameState.moves[i] as GameState})
+  const goToMove = (i: number) => {
+    setGameState({ 
+      moves: i === 0 ? initialState.moves : moves, 
+      currentMove: moves[i] as GameState['currentMove'] 
+    });
+  }
 
-  const calculateWinner = (squares: GameState['squares']) => {
+  const calculateWinner = (squares: GameState['currentMove']['squares']) => {
     return ['X', 'O']
       .map(player => squares.map((s, i) => s === player ? i : null).filter(s => s !== null))
       .map(squares => winningCombinations.some(combo => combo.every(s => squares.includes(s))))
@@ -15,43 +20,47 @@ export const Game = () => {
   }
 
   const squareClicked = (i: number) => {
-    if (gameState.squares[i] || gameState.winner) return;
+    if (currentMove.squares[i] || currentMove.winner) return;
 
-    const squares = [...gameState.squares];
-    squares[i] = gameState.player;
+    const squares = [...currentMove.squares];
+    squares[i] = currentMove.player;
+  
+    setGameState({ 
+      currentMove: {
+        squares,
+        player: NextPlayerMap[currentMove.player],
+        winner: calculateWinner(squares),
+      },
+      get moves() {
+        return [...moves.slice(0, squares.filter(Boolean).length), this.currentMove]
+      }
+    } as GameState);
+  }
+
+  const status = currentMove.winner 
+    ? `${currentMove.winner} Wins!` 
+    : `Next player: ${currentMove.player}`;
     
-    const newState = {
-      squares,
-      player: NextPlayerMap[gameState.player],
-      winner: calculateWinner(squares),
-    }
-
-    setGameState({
-      ...newState,
-      moves: [...gameState.moves.slice(0, squares.filter(Boolean).length), newState]
-    });
-  } 
-
-  const status = gameState.winner ? `${gameState.winner} Wins!` : `Next player: ${gameState.player}`;
+  const listItems = moves.map((move, i) => 
+    <li key={i}>
+      <button onClick={() => goToMove(i)}>
+        {i === 0 ? 'Go to game start' : `Go to move #${i}`}
+      </button>
+    </li>
+  );
 
   return (
     <div className="game">
       <div className="game-board">
         <Board
-          squares={gameState.squares}
+          squares={currentMove.squares}
           squareClicked={squareClicked} 
         />
       </div>
       <div className="game-info">
         <div> {status} </div>
         <ol>
-          {gameState.moves.map((move, i) => 
-            <li key={i}>
-              <button onClick={() => goToMove(i)}>
-                {i === 0 ? 'Go to game start' : `Go to move #${i}`}
-              </button>
-            </li>
-          )}
+          {listItems}
         </ol>
       </div>
     </div>

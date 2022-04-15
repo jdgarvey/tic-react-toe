@@ -7,18 +7,22 @@ export const NextPlayerMap: Record<string, Player> = {
 export type Player = 'X' | 'O' | '';
 
 export interface GameState {
-  squares: Array<string | null>;
-  player: Player;
-  winner: Player;
-  moves: Omit<GameState, 'moves'>[]
+  currentMove: {
+    squares: Array<string | null>;
+    player: Player;
+    winner: Player;
+  };
+  moves: GameState['currentMove'][]
 }
 
 export const initialState: GameState = {
-  squares: Array(9).fill(null),
-  player: 'X',
-  winner: '',
+  currentMove: {
+    squares: Array(9).fill(null),
+    player: 'X',
+    winner: '',
+  },
   get moves() {
-    const {squares, player, winner} = this;
+    const {squares, player, winner} = this.currentMove;
     return [{squares, player, winner}];
   }
 };
@@ -33,3 +37,8 @@ export const winningCombinations = [
   [3, 4, 5],
   [6, 7, 8] 
 ];
+
+// for each winning combination
+// turn array into a string
+// get array of each player's moves, sort, and turn into string
+// look for substring of winner into actual moves
